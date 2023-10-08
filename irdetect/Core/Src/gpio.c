@@ -339,24 +339,37 @@ void user_check_device_status(void)
 	static uint8_t checkIndex = 0;
 	
 	if(myDevice.devCtrl[checkIndex].irEnable == STATE_ENABLE){
-		myDevice.devCtrl[checkIndex].outState = user_get_out_status(checkIndex);
+		myDevice.devCtrl[checkIndex].lastOutState = user_get_out_status(checkIndex);
 		
 		if(myDevice.devCtrl[checkIndex].outState != myDevice.devCtrl[checkIndex].lastOutState){
-				
-				myDevice.devCtrl[checkIndex].lastOutState = myDevice.devCtrl[checkIndex].outState;
-				
-				if(myDevice.autoReportFlag && myDevice.devCtrl[checkIndex].outStateInitFlag){
+			
+			myDevice.devCtrl[checkIndex].outCnt ++;
+			
+			if(myDevice.devCtrl[checkIndex].outCnt >= 100){
+					myDevice.devCtrl[checkIndex].outState = myDevice.devCtrl[checkIndex].lastOutState;
+
+					if(myDevice.devCtrl[checkIndex].mode == 0){
+						if(myDevice.devCtrl[checkIndex].outState)	myDevice.devCtrl[checkIndex].ledState = LED_STATE_GREEN_ON;
+						else										myDevice.devCtrl[checkIndex].ledState = LED_STATE_RED_ON;
+					}
+						
+					if(myDevice.autoReportFlag && myDevice.devCtrl[checkIndex].outStateInitFlag){
+						
+						myDevice.cmdControl.autoAlarm.sendCmdEnable = CMD_ENABLE;
+						myDevice.cmdControl.autoAlarm.sendCmdDelay = 0;
+						myDevice.repCtrl[checkIndex].enable = CMD_ENABLE;
+						myDevice.repCtrl[checkIndex].type = myDevice.devCtrl[checkIndex].outState;
+						
+					}
 					
-					myDevice.cmdControl.autoAlarm.sendCmdEnable = CMD_ENABLE;
-					myDevice.cmdControl.autoAlarm.sendCmdDelay = 0;
-					myDevice.repCtrl[checkIndex].enable = CMD_ENABLE;
-					myDevice.repCtrl[checkIndex].type = myDevice.devCtrl[checkIndex].outState;
-					
-				}
-				
-				myDevice.devCtrl[checkIndex].outStateInitFlag = 1;
-			}
+					myDevice.devCtrl[checkIndex].outStateInitFlag = 1;
+					myDevice.devCtrl[checkIndex].outCnt = 0;
+			}	
+		}else{
+			myDevice.devCtrl[checkIndex].outCnt = 0;
+		}
 	}
+
 	
 	if(myDevice.checkPeriod) return;
 	

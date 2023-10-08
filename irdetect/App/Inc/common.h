@@ -46,6 +46,7 @@ typedef struct {
 	uint8_t ledState;
 	uint8_t outState;
 	uint8_t lastOutState;
+	uint8_t outCnt;
 	uint8_t outStateInitFlag;
 	uint8_t flashStatus;
 	uint8_t send;
