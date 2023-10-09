@@ -142,15 +142,19 @@ void onCmdSingleSetAllLedState(uint8_t *data, uint16_t length)
         return;
     }
 		
-		/* set dev state here */
-		for(int i=0;i<DEV_NUM;i++){
-			myDevice.devCtrl[i].mode = (mode >> i) & 0x01;
+	/* set dev state here */
+	for(int i=0;i<DEV_NUM;i++){
+		myDevice.devCtrl[i].mode = (mode >> i) & 0x01;
+		if(myDevice.devCtrl[i].mode){
 			myDevice.devCtrl[i].ledState = ledState[i];
+		}else{
+			myDevice.devCtrl[i].ledState = myDevice.devCtrl[i].outState ? LED_STATE_GREEN_ON : LED_STATE_RED_ON;
 		}
-		/* send ack msg here */
-		myDevice.cmdControl.setAllLedsState.sendCmdEnable = CMD_ENABLE;
-		myDevice.cmdControl.setAllLedsState.sendCmdDelay = 0;	
-		data[0] = 0;
+	}
+	/* send ack msg here */
+	myDevice.cmdControl.setAllLedsState.sendCmdEnable = CMD_ENABLE;
+	myDevice.cmdControl.setAllLedsState.sendCmdDelay = 0;	
+	data[0] = 0;
 }
 
 void onCmdSetSingleLedState(uint8_t *data, uint16_t length)
@@ -199,7 +203,11 @@ void onCmdSetSingleLedState(uint8_t *data, uint16_t length)
 
     /* set dev state here */
    	myDevice.devCtrl[port].mode = (status >> 4) & 0x0f;
-	myDevice.devCtrl[port].ledState = status & 0x0f;
+	if(myDevice.devCtrl[port].mode){
+		myDevice.devCtrl[port].ledState = status & 0x0f;
+	}else{
+		myDevice.devCtrl[port].ledState = myDevice.devCtrl[port].outState ? LED_STATE_GREEN_ON : LED_STATE_RED_ON;
+	}
 	myDevice.devCtrl[port].send = CMD_ENABLE;
     /* send ack msg here */
     myDevice.cmdControl.singleSetLedState.sendCmdEnable = CMD_ENABLE;
@@ -291,7 +299,11 @@ void onCmdMultiSetSingleLedState(uint8_t *data, uint16_t length)
 
     /* set dev state here */
    	myDevice.devCtrl[port].mode = (status >> 4) & 0x0f;
-	myDevice.devCtrl[port].ledState = status & 0x0f;
+	if(myDevice.devCtrl[port].mode){
+		myDevice.devCtrl[port].ledState = status & 0x0f;
+	}else{
+		myDevice.devCtrl[port].ledState = myDevice.devCtrl[port].outState ? LED_STATE_GREEN_ON : LED_STATE_RED_ON;
+	}
 	myDevice.devCtrl[port].send = CMD_DISABLE;
 }
 
@@ -320,7 +332,11 @@ void onCmdMultiSetAllLedState(uint8_t *data, uint16_t length)
     /* set dev state here */
 	for(i=0;i<DEV_NUM;i++){
 		myDevice.devCtrl[i].mode = (mode >> i) & 0x01;
-		myDevice.devCtrl[i].ledState = ledState[i];
+		if(myDevice.devCtrl[i].mode){
+			myDevice.devCtrl[i].ledState = ledState[i];
+		}else{
+			myDevice.devCtrl[i].ledState = myDevice.devCtrl[i].outState ? LED_STATE_GREEN_ON : LED_STATE_RED_ON;
+		}
 	}
 }
 
@@ -430,6 +446,7 @@ void onReportSetSingleLedState(void)
     uint8_t pos = 0;
     uint8_t port = 0;
 	while(1){
+		pos = 0;
 		if(myDevice.devCtrl[port].send == CMD_DISABLE){
 			port ++;
 			if(port >= DEV_NUM) 
@@ -508,6 +525,7 @@ void onReportAlarmType(void)
     uint8_t pos = 0;
 	uint8_t port = 0;
 	while(1){
+		pos = 0;
 		if(myDevice.repCtrl[port].enable){
 			/* address */
 		    buffer[pos++] = myDevice.address;
@@ -532,6 +550,8 @@ void onReportAlarmType(void)
 		    buffer[pos++] = myDevice.uid2 & 0xff;
 
 		    user_protocol_send_data(CMD_QUERY, OPT_CODE_REPORT_DEV_ALARM, buffer, pos);  
+
+			myDevice.repCtrl[port].enable = 0;
 		}
 		port ++;
 		if(port >= DEV_NUM) return;
