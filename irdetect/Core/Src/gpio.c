@@ -262,10 +262,12 @@ static void led_auto_mode(dev_ctrl_t *dev_ctr)
 		/* 设备在位*/
 		user_set_led_state(dev_ctr->port, LED_GREEN, LED_ON);
 		user_set_led_state(dev_ctr->port, LED_RED, LED_OFF);
+		dev_ctr->ledState = LED_STATE_GREEN_ON;
 	}else{
 		/* 设备不在�? */
 		user_set_led_state(dev_ctr->port, LED_RED, LED_ON);
 		user_set_led_state(dev_ctr->port, LED_GREEN, LED_OFF);
+		dev_ctr->ledState = LED_STATE_RED_ON;
 	}
 }
 
