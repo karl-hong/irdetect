@@ -341,7 +341,7 @@ void user_check_device_status(void)
 	static uint8_t checkIndex = 0;
 	
 	if(myDevice.devCtrl[checkIndex].irEnable == STATE_ENABLE){
-		myDevice.devCtrl[checkIndex].lastOutState = user_get_out_status(checkIndex);
+		myDevice.devCtrl[checkIndex].lastOutState = !user_get_out_status(checkIndex);
 		
 		if(myDevice.devCtrl[checkIndex].outState != myDevice.devCtrl[checkIndex].lastOutState){
 			
