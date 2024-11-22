@@ -259,12 +259,12 @@ static void red_green_led_flash(dev_ctrl_t *dev_ctr)
 static void led_auto_mode(dev_ctrl_t *dev_ctr)
 {
 	if(dev_ctr->outState){
-		/* 设备在位*/
+		/* 璁惧鍦ㄤ綅*/
 		user_set_led_state(dev_ctr->port, LED_GREEN, LED_ON);
 		user_set_led_state(dev_ctr->port, LED_RED, LED_OFF);
 		dev_ctr->ledState = LED_STATE_GREEN_ON;
 	}else{
-		/* 设备不在�? */
+		/* 璁惧涓嶅湪锟�? */
 		user_set_led_state(dev_ctr->port, LED_RED, LED_ON);
 		user_set_led_state(dev_ctr->port, LED_GREEN, LED_OFF);
 		dev_ctr->ledState = LED_STATE_RED_ON;
@@ -342,7 +342,7 @@ void user_check_device_status(void)
 	
 	if(myDevice.devCtrl[checkIndex].irEnable == STATE_ENABLE){
 		myDevice.devCtrl[checkIndex].lastOutState = !user_get_out_status(checkIndex);
-		
+
 		if(myDevice.devCtrl[checkIndex].outState != myDevice.devCtrl[checkIndex].lastOutState){
 			
 			myDevice.devCtrl[checkIndex].outCnt ++;
@@ -354,7 +354,7 @@ void user_check_device_status(void)
 						if(myDevice.devCtrl[checkIndex].outState)	myDevice.devCtrl[checkIndex].ledState = LED_STATE_GREEN_ON;
 						else										myDevice.devCtrl[checkIndex].ledState = LED_STATE_RED_ON;
 					}
-						
+	
 					if(myDevice.autoReportFlag && myDevice.devCtrl[checkIndex].outStateInitFlag){
 						
 						myDevice.cmdControl.autoAlarm.sendCmdEnable = CMD_ENABLE;

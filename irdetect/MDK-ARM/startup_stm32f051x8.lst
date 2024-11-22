@@ -363,11 +363,10 @@ ARM Macro Assembler    Page 6
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M0 --apcs=interw
 ork --depend=irdetect\startup_stm32f051x8.d -oirdetect\startup_stm32f051x8.o -I
-E:\workspace\project\irdetect\irdetect\MDK-ARM\RTE -I"D:\Program Files (x86)\Ke
-il_v5\ARM\PACK\ARM\CMSIS\4.2.0\CMSIS\Include" -I"D:\Program Files (x86)\Keil_v5
-\ARM\PACK\Keil\STM32F0xx_DFP\2.0.0" --predefine="__MICROLIB SETA 1" --predefine
-="__UVISION_VERSION SETA 514" --predefine="_RTE_ SETA 1" --predefine="STM32F051
-x8 SETA 1" --list=startup_stm32f051x8.lst startup_stm32f051x8.s
+K:\OneDrive\project\other\06_huanyun\246_IRdetect\SW\irdetect_s07_20241106\irde
+tect\MDK-ARM\RTE -Id:\Keil_v5\ARM\PACK\ARM\CMSIS\5.9.0\CMSIS\Core\Include --pre
+define="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 514" --predefine
+="_RTE_ SETA 1" --list=startup_stm32f051x8.lst startup_stm32f051x8.s
 
 
 
@@ -894,4 +893,4 @@ Symbol: __main
       At line 125 in file startup_stm32f051x8.s
 Comment: __main used once
 2 symbols
-388 symbols in table
+387 symbols in table

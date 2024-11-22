@@ -674,6 +674,11 @@ void user_database_init(void)
         myDevice.autoReportFlag = (uint8_t)readDataBase.autoReportFlag;
         myDevice.baudRateIndex = (readDataBase.baudRateIndex == 0xffff) ? DEFAULT_BAUD_RATE_INDEX : readDataBase.baudRateIndex;
     }
+
+    for(int i=0;i<DEV_NUM;i++){
+        myDevice.devCtrl[i].lastOutState = 0xff;
+        myDevice.devCtrl[i].outState     = 0xff;
+    }
 }
 
 void user_database_save(void)

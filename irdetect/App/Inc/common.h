@@ -15,6 +15,8 @@
 
 #define DEV_NUM						(12)
 
+#define VERSION						(S07)
+
 enum {
     CMD_DISABLE = 0,
     CMD_ENABLE,
