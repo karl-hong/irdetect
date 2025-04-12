@@ -4,7 +4,7 @@
 
 typedef struct {
     uint8_t opt;
-    void (*func)(uint8_t *data, uint16_t length);
+    void (*func)(uint8_t *data, uint8_t length);
 }cmd_query_t;
 
 typedef struct {
@@ -14,6 +14,7 @@ typedef struct {
 }cmd_report_t;
 
 extern cmd_query_t query_cmd[];
+extern cmd_query_t factory_query_cmd[];
 extern cmd_report_t report_cmd[];
 
 /* misc */
@@ -31,23 +32,23 @@ void printSetting(void);
 void user_check_report_delay(void);
 
 /* listen function */
-void onCmdGetAllStatus(uint8_t *data, uint16_t length);
+void onCmdGetAllStatus(uint8_t *data, uint8_t length);
 
-void onCmdSetSingleLedState(uint8_t *data, uint16_t length);
+void onCmdSetSingleLedState(uint8_t *data, uint8_t length);
 
-void onCmdSingleSetAllLedState(uint8_t *data, uint16_t length);
+void onCmdSingleSetAllLedState(uint8_t *data, uint8_t length);
 
-void onCmdModifyBaseSetting(uint8_t *data, uint16_t length);
+void onCmdModifyBaseSetting(uint8_t *data, uint8_t length);
 
-void onCmdMultiSetAutoReportFlag(uint8_t *data, uint16_t length);
+void onCmdMultiSetAutoReportFlag(uint8_t *data, uint8_t length);
 
-void onCmdMultiSetSingleLedState(uint8_t *data, uint16_t length);
+void onCmdMultiSetSingleLedState(uint8_t *data, uint8_t length);
 
-void onCmdMultiSetAllLedState(uint8_t *data, uint16_t length);
+void onCmdMultiSetAllLedState(uint8_t *data, uint8_t length);
 
-void onCmdSingleModifyBaudRate(uint8_t *data, uint16_t length);
+void onCmdSingleModifyBaudRate(uint8_t *data, uint8_t length);
 
-void onCmdMultiModifyBaudRate(uint8_t *data, uint16_t length);
+void onCmdMultiModifyBaudRate(uint8_t *data, uint8_t length);
 
 /* report function */
 void onReportAllStatus(void);

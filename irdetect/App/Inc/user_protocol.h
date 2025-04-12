@@ -11,11 +11,11 @@
 #define FRAME_TAIL				0x55
 #define TRANSLATE_CHAR			0xCC
 
-#define CMD_FIX_LEN				 6
-#define MIN_FRAME_LEN			(9)
+#define CMD_FIX_LEN				 5
+#define MIN_FRAME_LEN			(8)
 
 /**
- *协议格式：帧头（1字节）+ 指令（1字节）+ 操作码（1字节）+ 数据区长度（2字节）+ 数据区（N字节）+ 校验码（2字节）+ 帧尾（1字节）
+ *协议格式：帧头（1字节）+ 指令（1字节）+ 操作码（1字节）+ 数据区长度（1字节）+ 数据区（N字节）+ 校验码（2字节）+ 帧尾（1字节）
  */
 
 typedef enum tagEnumPTL_STATUS
@@ -61,6 +61,11 @@ enum {
 };
 
 enum {
+	CMD_FACTORY_QUERY = 0xFA,
+	CMD_FACTORY_ACK = 0xFB,
+};
+
+enum {
 	OPT_CODE_SINGLE_DEV_QUERY_STATUS = 0,//单设备状态查询指令
 	OPT_CODE_SINGLE_DEV_SET_SINGLE_LED_STATE,//单板控制单个led状态
 	OPT_CODE_SINGLE_DEV_SET_MULTI_LED_STATE,//单板控制所有led状态
@@ -72,6 +77,10 @@ enum {
 	OPT_CODE_REPORT_DEV_ADDR_AND_UID,
 	OPT_CODE_SINGLE_MODIFY_BAUDRATE = 0xfe,//单个设备修改波特率
 	OPT_CODE_MULTI_MODIFY_BAUDRATE,//批量修改波特率
+};
+
+enum {
+	OPT_CODE_FACTORY_QUERY = 0x01,
 };
 
 
@@ -87,6 +96,8 @@ void user_protocol_init(void);
 void user_protocol_push_data(uint8_t *data, uint16_t size);
 
 void user_protocol_send_data(uint8_t cmd, uint8_t optID, uint8_t *data, uint16_t size);
+
+void user_set_clear_buffer_flag(uint8_t isClear);
 
 
 #endif

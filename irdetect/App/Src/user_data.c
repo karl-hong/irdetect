@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "user_data.h"
 #include "common.h"
 #include "user_protocol.h"
@@ -24,7 +26,12 @@ cmd_query_t query_cmd[] = {
     {OPT_CODE_MULTI_DEV_SET_MULTI_LED_STATE,            onCmdMultiSetAllLedState},
     {OPT_CODE_SINGLE_MODIFY_BAUDRATE,   				onCmdSingleModifyBaudRate},
     {OPT_CODE_MULTI_MODIFY_BAUDRATE,    				onCmdMultiModifyBaudRate},	
+    {0, NULL}, // 结束标志,
+};
 
+cmd_query_t factory_query_cmd[] = {
+    // {OPT_CODE_FACTORY_QUERY,            onCmdFactoryQuery},
+    {0, NULL},//must end with NULL
 };
 
 /**
@@ -62,35 +69,15 @@ int getQueryCmdIndex(uint16_t opt)
     }
 }
 
-void onCmdGetAllStatus(uint8_t *data, uint16_t length)
+void onCmdGetAllStatus(uint8_t *data, uint8_t length)
 {
-    uint32_t uid0;
-    uint32_t uid1;
-    uint32_t uid2;
-    uint16_t pos = 0;
+    uint8_t pos = 0;
+    uint8_t addr = 0;
 
-    if(length < 12){
-        //printf("[%s]length error!\r\n", __FUNCTION__);
-        return;
-    }
+    addr = data[pos++];
 
-    uid0 = (data[pos++] << 24);
-    uid0 += (data[pos++] << 16);
-    uid0 += (data[pos++] << 8);
-    uid0 += data[pos++];
-
-    uid1 = (data[pos++] << 24);
-    uid1 += (data[pos++] << 16);
-    uid1 += (data[pos++] << 8);
-    uid1 += data[pos++];
-
-    uid2 = (data[pos++] << 24);
-    uid2 += (data[pos++] << 16);
-    uid2 += (data[pos++] << 8);
-    uid2 += data[pos++];
-
-    if(myDevice.uid0 != uid0 || myDevice.uid1 != uid1 || myDevice.uid2 != uid2){
-       // printf("[%s]UID is not matched!\r\n", __FUNCTION__);
+    if(IS_ADDR_INVALID(addr)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
         return;
     }
 
@@ -99,19 +86,12 @@ void onCmdGetAllStatus(uint8_t *data, uint16_t length)
     myDevice.cmdControl.singleQueryStatus.sendCmdDelay = 0;
 }
 
-void onCmdSingleSetAllLedState(uint8_t *data, uint16_t length)
+void onCmdSingleSetAllLedState(uint8_t *data, uint8_t length)
 {
-		uint32_t uid0;
-		uint32_t uid1;
-		uint32_t uid2;
-		uint16_t pos = 0;
-		uint16_t mode = 0;
-		uint8_t ledState[DEV_NUM] = {0};
-
-    if(NULL == data){
-       // printf("[%s]data is null!\r\n", __FUNCTION__);
-        return;
-    }
+    uint8_t pos = 0;
+    uint8_t mode = 0;
+    uint8_t addr = 0;
+    uint8_t ledState[DEV_NUM] = {0};
 
     /* mode */
 	mode = (data[pos++] << 8);
@@ -121,27 +101,13 @@ void onCmdSingleSetAllLedState(uint8_t *data, uint16_t length)
 		ledState[DEV_NUM - 1 - i] = (data[pos] >> 4) & 0x0f;
 		ledState[DEV_NUM - 2 - i] = (data[pos++] & 0x0f);
 	}
-    /* uid */
-    uid0 = (data[pos++] << 24);
-    uid0 += (data[pos++] << 16);
-    uid0 += (data[pos++] << 8);
-    uid0 += data[pos++];
-
-    uid1 = (data[pos++] << 24);
-    uid1 += (data[pos++] << 16);
-    uid1 += (data[pos++] << 8);
-    uid1 += data[pos++];
-
-    uid2 = (data[pos++] << 24);
-    uid2 += (data[pos++] << 16);
-    uid2 += (data[pos++] << 8);
-    uid2 += data[pos++];
-
-    if(myDevice.uid0 != uid0 || myDevice.uid1 != uid1 || myDevice.uid2 != uid2){
-        //printf("[%s]UID is not matched!\r\n", __FUNCTION__);
+    /* addr */
+    addr = data[pos++];
+    if(CHECK_ADDR_INVALID(addr)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
         return;
     }
-		
+
 	/* set dev state here */
 	for(int i=0;i<DEV_NUM;i++){
 		myDevice.devCtrl[i].mode = (mode >> i) & 0x01;
@@ -152,52 +118,33 @@ void onCmdSingleSetAllLedState(uint8_t *data, uint16_t length)
 		}
 	}
 	/* send ack msg here */
-	myDevice.cmdControl.setAllLedsState.sendCmdEnable = CMD_ENABLE;
-	myDevice.cmdControl.setAllLedsState.sendCmdDelay = 0;	
+    if(CHECK_ACK(addr)){
+        myDevice.cmdControl.setAllLedsState.sendCmdEnable = CMD_ENABLE;
+        myDevice.cmdControl.setAllLedsState.sendCmdDelay = 0;
+    }	
 	data[0] = 0;
 }
 
-void onCmdSetSingleLedState(uint8_t *data, uint16_t length)
+void onCmdSetSingleLedState(uint8_t *data, uint8_t length)
 {
-    uint32_t uid0;
-    uint32_t uid1;
-    uint32_t uid2;
-    uint16_t pos = 0;
+    uint8_t addr = 0;
+    uint8_t pos = 0;
     uint8_t status;
     uint8_t port;
-
-    if(NULL == data){
-       // printf("[%s]data is null!\r\n", __FUNCTION__);
-        return;
-    }
 
     /* port */
     port = data[pos++] - 1;
     /* mode and state */
     status = data[pos++];
-    /* uid */
-    uid0 = (data[pos++] << 24);
-    uid0 += (data[pos++] << 16);
-    uid0 += (data[pos++] << 8);
-    uid0 += data[pos++];
-
-    uid1 = (data[pos++] << 24);
-    uid1 += (data[pos++] << 16);
-    uid1 += (data[pos++] << 8);
-    uid1 += data[pos++];
-
-    uid2 = (data[pos++] << 24);
-    uid2 += (data[pos++] << 16);
-    uid2 += (data[pos++] << 8);
-    uid2 += data[pos++];
-
-    if(myDevice.uid0 != uid0 || myDevice.uid1 != uid1 || myDevice.uid2 != uid2){
-       // printf("[%s]UID is not matched!\r\n", __FUNCTION__);
+    /* addr */
+    addr = data[pos++];
+    if(CHECK_ADDR_INVALID(addr)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
         return;
     }
 
 	if(port >= DEV_NUM){
-		//printf("[%s]invalid port num!!!\r\n", __FUNCTION__);
+		printf("[%s]invalid port num!!!\r\n", __FUNCTION__);
 		return;
 	}
 
@@ -210,41 +157,25 @@ void onCmdSetSingleLedState(uint8_t *data, uint16_t length)
 	}
 	myDevice.devCtrl[port].send = CMD_ENABLE;
     /* send ack msg here */
-    myDevice.cmdControl.singleSetLedState.sendCmdEnable = CMD_ENABLE;
-    myDevice.cmdControl.singleSetLedState.sendCmdDelay = 0;
+    if(CHECK_ACK(addr)){
+        myDevice.cmdControl.singleSetLedState.sendCmdEnable = CMD_ENABLE;
+        myDevice.cmdControl.singleSetLedState.sendCmdDelay = 0;
+    } 
 }
 
-void onCmdModifyBaseSetting(uint8_t *data, uint16_t length)
+void onCmdModifyBaseSetting(uint8_t *data, uint8_t length)
 {
-    uint32_t uid0;
-    uint32_t uid1;
-    uint32_t uid2;
-    uint16_t pos = 0;
+    uint8_t pos = 0;
     uint8_t address;
     uint8_t autoReportFlag;
 
-	/* address */
-    address = data[pos++];
 	/* autoReportFlag */
     autoReportFlag = data[pos++];
-	/* uid */
-    uid0 = (data[pos++] << 24);
-    uid0 += (data[pos++] << 16);
-    uid0 += (data[pos++] << 8);
-    uid0 += data[pos++];
-	
-    uid1 = (data[pos++] << 24);
-    uid1 += (data[pos++] << 16);
-    uid1 += (data[pos++] << 8);
-    uid1 += data[pos++];
+	/* address */
+    address = data[pos++];
 
-    uid2 = (data[pos++] << 24);
-    uid2 += (data[pos++] << 16);
-    uid2 += (data[pos++] << 8);
-    uid2 += data[pos++];
-
-    if(myDevice.uid0 != uid0 || myDevice.uid1 != uid1 || myDevice.uid2 != uid2){
-        ///printf("[%s]UID is not matched!\r\n", __FUNCTION__);
+    if(CHECK_ADDR_INVALID(address)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
         return;
     }
 
@@ -254,13 +185,15 @@ void onCmdModifyBaseSetting(uint8_t *data, uint16_t length)
 	/* save setting */
 	user_database_save();
     /* send dev status here */
-    myDevice.cmdControl.singleBasicSetting.sendCmdEnable = CMD_ENABLE;
-    myDevice.cmdControl.singleBasicSetting.sendCmdDelay = 0;  
+    if(CHECK_ACK(address)){
+        myDevice.cmdControl.singleBasicSetting.sendCmdEnable = CMD_ENABLE;
+        myDevice.cmdControl.singleBasicSetting.sendCmdDelay = 0;
+    }  
 }
 
-void onCmdMultiSetAutoReportFlag(uint8_t *data, uint16_t length)
+void onCmdMultiSetAutoReportFlag(uint8_t *data, uint8_t length)
 {
-    uint16_t pos = 0;
+    uint8_t pos = 0;
     uint8_t autoReportFlag;
 
     if(length < 1){
@@ -275,9 +208,9 @@ void onCmdMultiSetAutoReportFlag(uint8_t *data, uint16_t length)
     user_database_save();
 }
 
-void onCmdMultiSetSingleLedState(uint8_t *data, uint16_t length)
+void onCmdMultiSetSingleLedState(uint8_t *data, uint8_t length)
 {
-    uint16_t pos = 0;
+    uint8_t pos = 0;
     uint8_t status;
     uint8_t port;
 
@@ -307,12 +240,12 @@ void onCmdMultiSetSingleLedState(uint8_t *data, uint16_t length)
 	myDevice.devCtrl[port].send = CMD_DISABLE;
 }
 
-void onCmdMultiSetAllLedState(uint8_t *data, uint16_t length)
+void onCmdMultiSetAllLedState(uint8_t *data, uint8_t length)
 {
-		uint16_t pos = 0;
-		uint16_t mode = 0;
-		uint8_t ledState[DEV_NUM] = {0};
-		uint8_t i;
+    uint8_t pos = 0;
+    uint16_t mode = 0;
+    uint8_t ledState[DEV_NUM] = {0};
+    uint8_t i;
 
     if(NULL == data){
       //  printf("[%s]data is null!\r\n", __FUNCTION__);
@@ -340,35 +273,20 @@ void onCmdMultiSetAllLedState(uint8_t *data, uint16_t length)
 	}
 }
 
-void onCmdSingleModifyBaudRate(uint8_t *data, uint16_t length)
+void onCmdSingleModifyBaudRate(uint8_t *data, uint8_t length)
 {
-    uint32_t uid0;
-    uint32_t uid1;
-    uint32_t uid2;
-    uint16_t pos = 0;
+    uint8_t addr = 0;
+    uint8_t pos = 0;
     uint8_t baudRateIndex = 0;
 
     baudRateIndex = data[pos++];
 
-    uid0 = (data[pos++] << 24);
-    uid0 += (data[pos++] << 16);
-    uid0 += (data[pos++] << 8);
-    uid0 += data[pos++];
-
-    uid1 = (data[pos++] << 24);
-    uid1 += (data[pos++] << 16);
-    uid1 += (data[pos++] << 8);
-    uid1 += data[pos++];
-
-    uid2 = (data[pos++] << 24);
-    uid2 += (data[pos++] << 16);
-    uid2 += (data[pos++] << 8);
-    uid2 += data[pos++]; 
-
-    if(myDevice.uid0 != uid0 || myDevice.uid1 != uid1 || myDevice.uid2 != uid2){
-       // printf("[%s]UID is not matched!\r\n", __FUNCTION__);
+    /* addr */
+    addr = data[pos++];
+    if(IS_ADDR_INVALID(addr)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
         return;
-    }  
+    }
  
     myDevice.baudRateIndex = baudRateIndex;
 
@@ -379,7 +297,7 @@ void onCmdSingleModifyBaudRate(uint8_t *data, uint16_t length)
     myDevice.cmdControl.singleModifyBaudRate.sendCmdDelay = 0;
 }
 
-void onCmdMultiModifyBaudRate(uint8_t *data, uint16_t length)
+void onCmdMultiModifyBaudRate(uint8_t *data, uint8_t length)
 {
     uint16_t pos = 0;
     uint8_t baudRateIndex = 0;
@@ -400,8 +318,6 @@ void onReportAllStatus(void)
 	uint16_t onFlag = 0;
 	uint16_t mode = 0;
     
-    /* addr */
-    buffer[pos++] = myDevice.address;
 	/* auto report flag */
 	buffer[pos++] = myDevice.autoReportFlag;
  	/* baudRate */
@@ -423,20 +339,9 @@ void onReportAllStatus(void)
 	buffer[pos++] = ((myDevice.devCtrl[5].ledState << 4) & 0xf0) + (myDevice.devCtrl[4].ledState & 0x0f);
 	buffer[pos++] = ((myDevice.devCtrl[3].ledState << 4) & 0xf0) + (myDevice.devCtrl[2].ledState & 0x0f);
 	buffer[pos++] = ((myDevice.devCtrl[1].ledState << 4) & 0xf0) + (myDevice.devCtrl[0].ledState & 0x0f);	
-    /* UID */
-    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid0 & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid1 & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid2 & 0xff;
-    
+    /* addr */
+    buffer[pos++] = myDevice.address;
+
     user_protocol_send_data(CMD_ACK, OPT_CODE_SINGLE_DEV_QUERY_STATUS, buffer, pos);       
 }
 
@@ -460,19 +365,8 @@ void onReportSetSingleLedState(void)
     	buffer[pos++] = port + 1;
 		/* mode and state */
 		buffer[pos++] = ((myDevice.devCtrl[port].mode << 4) & 0xf0) + (myDevice.devCtrl[port].ledState & 0x0f);
-		/* UID */
-	    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
-	    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
-	    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
-	    buffer[pos++] = myDevice.uid0 & 0xff;
-	    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
-	    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
-	    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
-	    buffer[pos++] = myDevice.uid1 & 0xff;
-	    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
-	    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
-	    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
-	    buffer[pos++] = myDevice.uid2 & 0xff;
+		/* addr */
+        buffer[pos++] = myDevice.address;
 
 		user_protocol_send_data(CMD_ACK, OPT_CODE_SINGLE_DEV_SET_SINGLE_LED_STATE, buffer, pos); 
 
@@ -487,8 +381,7 @@ void onReportSetAllLedState(void)
 {
     uint8_t buffer[100];
     uint8_t pos = 0;
-    /* addr */
-    buffer[pos++] = myDevice.address;
+    
 	/* mode */
 	buffer[pos] = 0;
 	for(int i;i<DEV_NUM;i++){
@@ -503,18 +396,8 @@ void onReportSetAllLedState(void)
 	buffer[pos++] = (myDevice.devCtrl[3].ledState << 4) + (myDevice.devCtrl[2].ledState & 0x0f);
 	buffer[pos++] = (myDevice.devCtrl[1].ledState << 4) + (myDevice.devCtrl[0].ledState & 0x0f);
     /* UID */
-    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid0 & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid1 & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid2 & 0xff;
+    /* addr */
+    buffer[pos++] = myDevice.address;
 
     user_protocol_send_data(CMD_ACK, OPT_CODE_SINGLE_DEV_SET_MULTI_LED_STATE, buffer, pos);     
 }
@@ -527,27 +410,14 @@ void onReportAlarmType(void)
 	while(1){
 		pos = 0;
 		if(myDevice.repCtrl[port].enable){
-			/* address */
-		    buffer[pos++] = myDevice.address;
 			/* port */
 		    buffer[pos++] = port + 1;
 			/* type */
 			buffer[pos++] = myDevice.repCtrl[port].type;
 			/* mode and led state */
 			buffer[pos++] = (myDevice.devCtrl[port].mode << 4) + (myDevice.devCtrl[port].ledState & 0x0f);
-			/* uid */
-		    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
-		    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
-		    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
-		    buffer[pos++] = myDevice.uid0 & 0xff;
-		    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
-		    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
-		    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
-		    buffer[pos++] = myDevice.uid1 & 0xff;
-		    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
-		    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
-		    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
-		    buffer[pos++] = myDevice.uid2 & 0xff;
+			/* address */
+		    buffer[pos++] = myDevice.address;
 
 		    user_protocol_send_data(CMD_QUERY, OPT_CODE_REPORT_DEV_ALARM, buffer, pos);  
 
@@ -562,23 +432,11 @@ void onReportBaseSetting(void)
 {
     uint8_t buffer[100];
     uint8_t pos = 0;
-	/* address */
-    buffer[pos++] = myDevice.address;
+	
 	/* auto report flag */
     buffer[pos++] = myDevice.autoReportFlag;
-	/* uid */
-    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid0 & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid1 & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid2 & 0xff;
+	/* address */
+    buffer[pos++] = myDevice.address;
 
     user_protocol_send_data(CMD_ACK, OPT_CODE_SINGLE_DEV_MODIFY_BASE_SETTING, buffer, pos);     
 }
@@ -613,23 +471,11 @@ void onReportSingleModifyBaudRate(void)
 {
     uint8_t buffer[23];
     uint8_t pos = 0;
-    /* addr */
-    buffer[pos++] = myDevice.address;
+   
     /* lock baudRateIndex */
     buffer[pos++] = myDevice.baudRateIndex;
-    /* UID */
-    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid0 & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid1 & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
-    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
-    buffer[pos++] = myDevice.uid2 & 0xff;
+     /* addr */
+    buffer[pos++] = myDevice.address;
 
     user_protocol_send_data(CMD_ACK, OPT_CODE_SINGLE_MODIFY_BAUDRATE, buffer, pos); 
 
@@ -673,6 +519,11 @@ void user_database_init(void)
         myDevice.address = (uint8_t )readDataBase.address;
         myDevice.autoReportFlag = (uint8_t)readDataBase.autoReportFlag;
         myDevice.baudRateIndex = (readDataBase.baudRateIndex == 0xffff) ? DEFAULT_BAUD_RATE_INDEX : readDataBase.baudRateIndex;
+    }
+
+    for(int i=0;i<DEV_NUM;i++){
+        myDevice.devCtrl[i].lastOutState = 0xff;
+        myDevice.devCtrl[i].outState     = 0xff;
     }
 }
 

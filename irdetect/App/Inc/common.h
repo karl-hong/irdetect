@@ -15,6 +15,14 @@
 
 #define DEV_NUM						(12)
 
+#define VERSION						(S07)
+
+#define BROADCAST_ADDR              (0xFF)
+#define CHECK_ADDR_INVALID(addr)    (BROADCAST_ADDR != addr && addr != myDevice.address)
+#define CHECK_ACK(addr)             (addr == myDevice.address)
+#define IS_ADDR_INVALID(addr)        (addr != myDevice.address)
+#define IS_UID_INVALID(uid0, uid1, uid2)        (uid0 != myDevice.uid0 || uid1 != myDevice.uid1 || uid2 != myDevice.uid2)
+
 enum {
     CMD_DISABLE = 0,
     CMD_ENABLE,
@@ -63,7 +71,7 @@ typedef struct {
 typedef struct {
     uint8_t  autoReportFlag;
     uint8_t  address;
-		uint16_t checkPeriod;
+	uint16_t checkPeriod;
     uint32_t uid0;
     uint32_t uid1;
     uint32_t uid2;
