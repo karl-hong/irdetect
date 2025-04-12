@@ -6,6 +6,7 @@
 #include "user_protocol.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_flash_ex.h"  
+#include "flash_if.h"
 #include "gpio.h"
 
 /**
@@ -26,11 +27,16 @@ cmd_query_t query_cmd[] = {
     {OPT_CODE_MULTI_DEV_SET_MULTI_LED_STATE,            onCmdMultiSetAllLedState},
     {OPT_CODE_SINGLE_MODIFY_BAUDRATE,   				onCmdSingleModifyBaudRate},
     {OPT_CODE_MULTI_MODIFY_BAUDRATE,    				onCmdMultiModifyBaudRate},	
+    {OPT_CODE_SET_ADDR_BY_UID,                          onCmdSetAddrByUid},
+    {OPT_CODE_SET_ADDR_BY_ADDR,                         onCmdSetAddrByAddr},
+    {OPT_CODE_GET_INFO_BY_ADDR,                         onCmdGetInfoByAddr},
+    {OPT_CODE_CLEAR_UART_BUFFER,                        onCmdClearUartBuffer},
+    {OPT_CODE_REQUEST_UPGRADE,                          onCmdRequestUpgrade},
     {0, NULL}, // 结束标志,
 };
 
 cmd_query_t factory_query_cmd[] = {
-    // {OPT_CODE_FACTORY_QUERY,            onCmdFactoryQuery},
+    {OPT_CODE_FACTORY_QUERY,            onCmdFactoryQuery},
     {0, NULL},//must end with NULL
 };
 
@@ -45,12 +51,18 @@ cmd_query_t factory_query_cmd[] = {
 cmd_report_t report_cmd[] = {
     {&myDevice.cmdControl.singleQueryStatus.sendCmdEnable,          &myDevice.cmdControl.singleQueryStatus.sendCmdDelay,        onReportAllStatus},
     {&myDevice.cmdControl.singleSetLedState.sendCmdEnable,          &myDevice.cmdControl.singleSetLedState.sendCmdDelay,        onReportSetSingleLedState},
-    {&myDevice.cmdControl.setAllLedsState.sendCmdEnable,       		&myDevice.cmdControl.setAllLedsState.sendCmdDelay,     onReportSetAllLedState},
+    {&myDevice.cmdControl.setAllLedsState.sendCmdEnable,       		&myDevice.cmdControl.setAllLedsState.sendCmdDelay,          onReportSetAllLedState},
     {&myDevice.cmdControl.autoAlarm.sendCmdEnable,          		&myDevice.cmdControl.autoAlarm.sendCmdDelay,          		onReportAlarmType},
     {&myDevice.cmdControl.singleBasicSetting.sendCmdEnable,         &myDevice.cmdControl.singleBasicSetting.sendCmdDelay,       onReportBaseSetting},
     {&myDevice.cmdControl.reportAddrAndUid.sendCmdEnable,           &myDevice.cmdControl.reportAddrAndUid.sendCmdDelay,         onReportAddrAndUid},
     {&myDevice.cmdControl.singleModifyBaudRate.sendCmdEnable,		&myDevice.cmdControl.singleModifyBaudRate.sendCmdDelay,		onReportSingleModifyBaudRate},
-
+    {&myDevice.cmdControl.setAddrByUid.sendCmdEnable,               &myDevice.cmdControl.setAddrByUid.sendCmdDelay,             onReportSetAddrByUid},
+    {&myDevice.cmdControl.setAddrByAddr.sendCmdEnable,              &myDevice.cmdControl.setAddrByAddr.sendCmdDelay,            onReportSetAddrByAddr},
+    {&myDevice.cmdControl.getInfo.sendCmdEnable,                    &myDevice.cmdControl.getInfo.sendCmdDelay,                  onReportGetInfoByAddr},
+    {&myDevice.cmdControl.clrUartBuffer.sendCmdEnable,              &myDevice.cmdControl.clrUartBuffer.sendCmdDelay,            onReportClearUartBuffer},
+    {&myDevice.cmdControl.factoryCmd.sendCmdEnable,                 &myDevice.cmdControl.factoryCmd.sendCmdDelay,               onReportFactoryCmd},
+    {&myDevice.cmdControl.upgrade.sendCmdEnable,                    &myDevice.cmdControl.upgrade.sendCmdDelay,                  onReportRequestUpgrade},
+    {0, NULL, NULL}, // 结束标志
 };
 
 void onCmdGetAllStatus(uint8_t *data, uint8_t length)
@@ -295,6 +307,133 @@ void onCmdMultiModifyBaudRate(uint8_t *data, uint8_t length)
     while(1);//wait for watchdog reset  
 }
 
+void onCmdSetAddrByUid(uint8_t *data, uint8_t length)
+{
+    uint8_t pos = 0;
+    uint8_t addr = 0;
+    uint32_t uid0, uid1, uid2;
+
+    /* uid */
+    uid0 = (data[pos++] << 24) + (data[pos++] << 16) + (data[pos++] << 8) + data[pos++];
+    uid1 = (data[pos++] << 24) + (data[pos++] << 16) + (data[pos++] << 8) + data[pos++];
+    uid2 = (data[pos++] << 24) + (data[pos++] << 16) + (data[pos++] << 8) + data[pos++];
+
+    if(IS_UID_INVALID(uid0, uid1, uid2)){
+        printf("[%s]uid is not matched!\r\n", __FUNCTION__);
+        return;
+
+    }
+
+    /* addr */
+    addr = data[pos++];
+    if(BROADCAST_ADDR == addr){
+        printf("[%s]can not set broadcast addr!\r\n", __FUNCTION__);
+        return;
+    }
+
+    myDevice.address = addr;
+
+    user_database_save();
+
+    /* send ack msg */
+    myDevice.cmdControl.setAddrByUid.sendCmdEnable = CMD_ENABLE;
+    myDevice.cmdControl.setAddrByUid.sendCmdDelay = 0;
+}
+
+void onCmdSetAddrByAddr(uint8_t *data, uint8_t length)
+{
+    uint8_t pos = 0;
+    uint8_t addr = 0;
+    uint8_t newAddr = 0;
+
+    /* addr */
+    newAddr = data[pos++];
+    addr = data[pos++];
+
+    if(IS_ADDR_INVALID(addr)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
+        return;
+    }
+
+    if(BROADCAST_ADDR == newAddr){
+        printf("[%s]can not set broadcast addr!\r\n", __FUNCTION__);
+        return;
+    }
+    myDevice.address = newAddr;
+    myDevice.oldAddress = addr;
+    user_database_save();
+    /* send ack msg */
+    myDevice.cmdControl.setAddrByAddr.sendCmdEnable = CMD_ENABLE;
+    myDevice.cmdControl.setAddrByAddr.sendCmdDelay = 0;
+}
+
+void onCmdGetInfoByAddr(uint8_t *data, uint8_t length)
+{
+    uint8_t pos = 0;
+    uint8_t addr = 0;
+
+    /* addr */
+    addr = data[pos++];
+    if(IS_ADDR_INVALID(addr)){
+        printf("[%s]addr is not matched!\r\n", __FUNCTION__);
+        return;
+    }
+
+    /* send ack msg */
+    myDevice.cmdControl.getInfo.sendCmdEnable = CMD_ENABLE;
+    myDevice.cmdControl.getInfo.sendCmdDelay = 0;
+}
+
+void onCmdClearUartBuffer(uint8_t *data, uint8_t length)
+{
+    uint8_t addr = 0;
+    uint8_t pos = 0;
+
+    addr = data[pos++];
+    if(IS_ADDR_INVALID(addr)){
+        printf("[%s]address is not matched!\r\n", __FUNCTION__);
+        return;
+    }
+
+    /* clear uart buffer here */
+    user_set_clear_buffer_flag(1);
+    
+    /* send ack msg here */
+    myDevice.cmdControl.clrUartBuffer.sendCmdEnable = CMD_ENABLE;
+    myDevice.cmdControl.clrUartBuffer.sendCmdDelay = 0;
+}
+
+void onCmdFactoryQuery(uint8_t *data, uint8_t length)
+{
+    /* send ack msg here */
+    myDevice.cmdControl.factoryCmd.sendCmdEnable = CMD_ENABLE;
+    myDevice.cmdControl.factoryCmd.sendCmdDelay = 0;
+}
+
+void onCmdRequestUpgrade(uint8_t *data, uint8_t length)
+{
+    uint8_t addr = 0;
+    uint8_t pos = 0;
+    uint8_t status = 0;
+
+    addr = data[pos++];
+    status = data[pos++];
+
+    if(IS_ADDR_INVALID(addr)){
+        printf("[%s]address is not matched!\r\n", __FUNCTION__);
+        return;
+    }
+
+    if(status != 0){
+        printf("[%s]request upgrade failed!\r\n", __FUNCTION__);
+        return;
+    }
+
+    /* send ack msg here */
+    myDevice.cmdControl.upgrade.sendCmdEnable = CMD_ENABLE;
+    myDevice.cmdControl.upgrade.sendCmdDelay = 0;
+}
+
 void onReportAllStatus(void)
 {
     uint8_t buffer[100];
@@ -464,6 +603,136 @@ void onReportSingleModifyBaudRate(void)
     while(1);//wait for watchdog reset 
 }
 
+void onReportSetAddrByUid(void)
+{
+    uint8_t buffer[32];
+    uint8_t pos = 0;
+
+    /* uid */
+    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid0 & 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid1 & 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid2 & 0xff;
+
+    /* addr */
+    buffer[pos++] = myDevice.address;
+
+    user_protocol_send_data(CMD_ACK, OPT_CODE_SET_ADDR_BY_UID, buffer, pos);
+}
+
+void onReportSetAddrByAddr(void)
+{
+    uint8_t buffer[32];
+    uint8_t pos = 0;
+
+    /* addr */
+    buffer[pos++] = myDevice.address;
+    buffer[pos++] = myDevice.oldAddress;
+
+    user_protocol_send_data(CMD_ACK, OPT_CODE_SET_ADDR_BY_ADDR, buffer, pos);
+}
+
+void onReportGetInfoByAddr(void)
+{
+    uint8_t buffer[32];
+    uint8_t pos = 0;
+
+    /* uid */
+    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid0 & 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid1 & 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid2 & 0xff;
+
+    /* version */
+    buffer[pos++] = (VERSION >> 8U) & 0xff;
+    buffer[pos++] = VERSION & 0xff;
+
+    /* addr */
+    buffer[pos++] = myDevice.address;
+
+    user_protocol_send_data(CMD_ACK, OPT_CODE_GET_INFO_BY_ADDR, buffer, pos);
+}
+
+void onReportClearUartBuffer(void)
+{
+    uint8_t buffer[23];
+    uint8_t pos = 0;
+    
+    /* addr */
+    buffer[pos++] = myDevice.address;
+
+    user_protocol_send_data(CMD_ACK, OPT_CODE_CLEAR_UART_BUFFER, buffer, pos);     
+}
+
+void onReportFactoryCmd(void)
+{
+    uint8_t buffer[50];
+    uint8_t pos = 0;
+
+    /* type */
+    buffer[pos++] = CMD_ACK;
+
+    /* addr */
+    buffer[pos++] = myDevice.address;
+
+    /* uid */
+    buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid0 & 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid1 & 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
+    buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
+    buffer[pos++] = myDevice.uid2 & 0xff;
+
+    user_protocol_send_data(CMD_FACTORY_ACK, OPT_CODE_FACTORY_QUERY, buffer, pos); 
+}
+
+void onReportRequestUpgrade(void)
+{
+
+	printf("[%s]\r\n", __FUNCTION__);
+
+	uint8_t res = 0;
+	(void)res;
+
+	if(0 == write_upgrade_flag()){
+		res = 1;
+	}
+
+	// uint8_t buffer[30];
+    // uint8_t pos = 0;
+
+    // buffer[pos++] = res;
+    // buffer[pos++] = lock.address;
+
+	// user_protocol_send_data(CMD_ACK, OPT_CODE_SET_REQUEST_UPGRADE, buffer, pos); 
+
+	// HAL_Delay(100);//等待发送出去
+
+	HAL_NVIC_SystemReset();
+}
+
 
 uint16_t user_read_flash(uint32_t address)
 {
@@ -575,5 +844,49 @@ void printSetting(void)
    // printf("address: 0x%02X\r\n", myDevice.address);
    // printf("autoReportFlag: %d\r\n", myDevice.autoReportFlag);
   //  printf("baudRateIndex: %d\r\n", myDevice.baudRateIndex);
+}
+
+int write_upgrade_flag(void)
+{
+    int ret =0;
+    HAL_StatusTypeDef status;
+    FLASH_EraseInitTypeDef flashEraseInitType;
+    uint32_t PageError;
+    upgrade_t upgradeData;
+    uint16_t i;
+    uint16_t *pData = NULL;
+    uint16_t lenOfDataBase = sizeof(upgrade_t) / sizeof(uint16_t);
+
+    upgradeData.magic = DATABASE_MAGIC;
+    upgradeData.address = myDevice.address;
+    upgradeData.deviceCmd = CMD_QUERY;
+    upgradeData.baudIndex = myDevice.baudRateIndex;
+    upgradeData.upgradeFlag = APP_UPGREQ_IS_VALID;
+
+    pData = (uint16_t *)&upgradeData;
+    
+    HAL_FLASH_Unlock();
+
+    flashEraseInitType.TypeErase = FLASH_TYPEERASE_PAGES;
+    flashEraseInitType.PageAddress = APP_UPGRADE_FLAG_ADDRESS;
+    flashEraseInitType.NbPages = 1;
+    status = HAL_FLASHEx_Erase(&flashEraseInitType, &PageError);
+    
+    if(HAL_OK != status){
+        HAL_FLASH_Lock();
+        printf("[%s]Flash erase error: %d\r\n", __FUNCTION__, status);
+        return -1;
+    }
+
+    for(i=0;i<lenOfDataBase;i++){
+       if(HAL_OK != HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, APP_UPGRADE_FLAG_ADDRESS + 2U*i, pData[i])){
+            printf("[%s]write data[%d] fail!\r\n", __FUNCTION__, i);
+            ret = -1;
+       } 
+    }
+
+    HAL_FLASH_Lock();
+
+    return ret;
 }
 

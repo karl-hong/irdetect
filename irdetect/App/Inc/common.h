@@ -15,7 +15,7 @@
 
 #define DEV_NUM						(12)
 
-#define VERSION						(S07)
+#define VERSION						(0x0008)
 
 #define BROADCAST_ADDR              (0xFF)
 #define CHECK_ADDR_INVALID(addr)    (BROADCAST_ADDR != addr && addr != myDevice.address)
@@ -46,6 +46,12 @@ typedef struct {
     cmd_setting_t singleBasicSetting;
 	cmd_setting_t reportAddrAndUid;
     cmd_setting_t singleModifyBaudRate;
+	cmd_setting_t setAddrByUid;
+	cmd_setting_t setAddrByAddr;
+	cmd_setting_t getInfo;
+	cmd_setting_t upgrade;
+	cmd_setting_t clrUartBuffer;
+	cmd_setting_t factoryCmd;
 }cmd_control_t;
 
 typedef struct {
@@ -71,6 +77,7 @@ typedef struct {
 typedef struct {
     uint8_t  autoReportFlag;
     uint8_t  address;
+	uint8_t  oldAddress;
 	uint16_t checkPeriod;
     uint32_t uid0;
     uint32_t uid1;
@@ -113,6 +120,13 @@ typedef struct {
     uint16_t baudRateIndex;
 }database_t;
 
+typedef struct {
+    uint16_t magic;
+    uint16_t address;
+    uint16_t deviceCmd;
+    uint16_t baudIndex;
+    uint32_t upgradeFlag;
+}upgrade_t;
 
 extern dev_ctx_t myDevice;
 

@@ -50,6 +50,18 @@ void onCmdSingleModifyBaudRate(uint8_t *data, uint8_t length);
 
 void onCmdMultiModifyBaudRate(uint8_t *data, uint8_t length);
 
+void onCmdSetAddrByUid(uint8_t *data, uint8_t length);
+
+void onCmdSetAddrByAddr(uint8_t *data, uint8_t length);
+
+void onCmdGetInfoByAddr(uint8_t *data, uint8_t length);
+
+void onCmdClearUartBuffer(uint8_t *data, uint8_t length);
+
+void onCmdFactoryQuery(uint8_t *data, uint8_t length);
+
+void onCmdRequestUpgrade(uint8_t *data, uint8_t length);
+
 /* report function */
 void onReportAllStatus(void);
 
@@ -64,6 +76,20 @@ void onReportBaseSetting(void);
 void onReportAddrAndUid(void);
 
 void onReportSingleModifyBaudRate(void);
+
+void onReportSetAddrByUid(void);
+
+void onReportSetAddrByAddr(void);
+
+void onReportGetInfoByAddr(void);
+
+void onReportClearUartBuffer(void);
+
+void onReportFactoryCmd(void);
+
+void onReportRequestUpgrade(void);
+
+int write_upgrade_flag(void);
 
 #endif
 

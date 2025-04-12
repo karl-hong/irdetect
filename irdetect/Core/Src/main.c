@@ -27,9 +27,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "user_protocol.h"
 #include "common.h"
 #include "user_data.h"
+#include "flash_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,7 +63,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void InterruptRemap(void)
+{
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+	memcpy((void*)RAM_ADDRESS_START, (void*)APPLICATION_ADDRESS, VECTOR_SIZE);
+	__HAL_SYSCFG_REMAPMEMORY_SRAM();
+}
 /* USER CODE END 0 */
 
 /**
@@ -70,7 +78,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	InterruptRemap();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
