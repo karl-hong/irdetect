@@ -53,22 +53,6 @@ cmd_report_t report_cmd[] = {
 
 };
 
-int getQueryCmdIndex(uint16_t opt)
-{
-    switch(opt){
-        default:                                            return -1;
-		case OPT_CODE_SINGLE_DEV_QUERY_STATUS:              return 0;
-		case OPT_CODE_SINGLE_DEV_SET_SINGLE_LED_STATE:      return 1;
-		case OPT_CODE_SINGLE_DEV_SET_MULTI_LED_STATE:       return 2;
-		case OPT_CODE_SINGLE_DEV_MODIFY_BASE_SETTING:       return 3;
-		case OPT_CODE_MULTI_DEV_SET_AUTO_REPORT_FLAG:       return 4;   
-		case OPT_CODE_MULTI_DEV_SET_SINGLE_LED_STATE:       return 5; 
-		case OPT_CODE_MULTI_DEV_SET_MULTI_LED_STATE:        return 6;
-		case OPT_CODE_SINGLE_MODIFY_BAUDRATE:               return 7;
-		case OPT_CODE_MULTI_MODIFY_BAUDRATE:								return 8;
-    }
-}
-
 void onCmdGetAllStatus(uint8_t *data, uint8_t length)
 {
     uint8_t pos = 0;
@@ -359,8 +343,7 @@ void onReportSetSingleLedState(void)
 			else 
 				continue;
 		}
-		/* addr */
-    	buffer[pos++] = myDevice.address;
+
 		/* port */
     	buffer[pos++] = port + 1;
 		/* mode and state */
@@ -395,7 +378,6 @@ void onReportSetAllLedState(void)
 	buffer[pos++] = (myDevice.devCtrl[5].ledState << 4) + (myDevice.devCtrl[4].ledState & 0x0f);
 	buffer[pos++] = (myDevice.devCtrl[3].ledState << 4) + (myDevice.devCtrl[2].ledState & 0x0f);
 	buffer[pos++] = (myDevice.devCtrl[1].ledState << 4) + (myDevice.devCtrl[0].ledState & 0x0f);
-    /* UID */
     /* addr */
     buffer[pos++] = myDevice.address;
 
