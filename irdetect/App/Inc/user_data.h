@@ -25,8 +25,6 @@ void user_database_save(void);
 
 void user_reply_handle(void);
 
-int getQueryCmdIndex(uint16_t opt);
-
 void printSetting(void);
 
 void user_check_report_delay(void);

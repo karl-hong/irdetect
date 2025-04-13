@@ -1,6 +1,12 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 #include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h> 
+// #include <math.h>
+#include "main.h"
+#include "flash_if.h"
 
 #define DATABASE_START_ADDR         (0x0800F000)
 #define DATABASE_MAGIC              (0xaaaa)

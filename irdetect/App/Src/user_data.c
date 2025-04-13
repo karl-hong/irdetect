@@ -62,7 +62,7 @@ cmd_report_t report_cmd[] = {
     {&myDevice.cmdControl.clrUartBuffer.sendCmdEnable,              &myDevice.cmdControl.clrUartBuffer.sendCmdDelay,            onReportClearUartBuffer},
     {&myDevice.cmdControl.factoryCmd.sendCmdEnable,                 &myDevice.cmdControl.factoryCmd.sendCmdDelay,               onReportFactoryCmd},
     {&myDevice.cmdControl.upgrade.sendCmdEnable,                    &myDevice.cmdControl.upgrade.sendCmdDelay,                  onReportRequestUpgrade},
-    {0, NULL, NULL}, // 结束标志
+    {NULL, NULL, NULL}, // 结束标志
 };
 
 void onCmdGetAllStatus(uint8_t *data, uint8_t length)
@@ -830,8 +830,7 @@ void user_reply_handle(void)
 
 void user_check_report_delay(void)
 {
-    uint16_t funcNum = sizeof(report_cmd) / sizeof(cmd_report_t);
-    for(uint16_t i = 0; i < funcNum; i++){
+    for(uint8_t i=0; report_cmd[i].cmdEnable; i++){
         if(*report_cmd[i].cmdEnable && (*report_cmd[i].cmdDelay > 0)){
             *report_cmd[i].cmdDelay --;
         }
@@ -840,10 +839,11 @@ void user_check_report_delay(void)
 
 void printSetting(void)
 {
-    //printf("Chip uuid: 0x%04x%04x%04x\r\n", myDevice.uid0, myDevice.uid1, myDevice.uid2);
-   // printf("address: 0x%02X\r\n", myDevice.address);
-   // printf("autoReportFlag: %d\r\n", myDevice.autoReportFlag);
-  //  printf("baudRateIndex: %d\r\n", myDevice.baudRateIndex);
+	printf("Version: 0x%04x\r\n", VERSION);
+	printf("Chip uuid: 0x%04x%04x%04x\r\n", myDevice.uid0, myDevice.uid1, myDevice.uid2);
+	printf("address: 0x%02X\r\n", myDevice.address);
+	printf("autoReportFlag: %d\r\n", myDevice.autoReportFlag);
+	printf("baudRateIndex: %d\r\n", myDevice.baudRateIndex);
 }
 
 int write_upgrade_flag(void)

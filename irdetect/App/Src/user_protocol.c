@@ -274,7 +274,6 @@ void user_protocol_handle(void)
 			user_buffer_release_items(&myRingBuffer, pResultReseave.indexOfTail + 1);
 		}
 	}
-
 	user_protocol_reset_buffer();
 }
 
