@@ -29,6 +29,14 @@
 #define IS_ADDR_INVALID(addr)        (addr != myDevice.address)
 #define IS_UID_INVALID(uid0, uid1, uid2)        (uid0 != myDevice.uid0 || uid1 != myDevice.uid1 || uid2 != myDevice.uid2)
 
+
+enum {
+    STATUS_REQUEST_UPGRADE = 1,
+    STATUS_UPGRADE_GOING,
+    STATUS_UPGRADE_SUCCESS,
+};
+#define PACKET_SIZE                 (32)
+
 enum {
     CMD_DISABLE = 0,
     CMD_ENABLE,
