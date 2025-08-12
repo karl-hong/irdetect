@@ -756,7 +756,7 @@ void onReportRequestUpgrade(void)
     }
 
     /* 地址 */
-    buffer[pos++] = lock.address;
+    buffer[pos++] = myDevice.address;
     /* 状态 */
     buffer[pos++] = upgradeStatus;
     /* 包总数 */

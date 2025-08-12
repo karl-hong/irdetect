@@ -140,6 +140,10 @@ typedef struct {
     uint16_t deviceCmd;
     uint16_t baudIndex;
     uint32_t upgradeFlag;
+    uint32_t packetIndex;
+    uint32_t packetSize;
+    uint8_t packetData[PACKET_SIZE];
+    uint16_t upgradeStatus;
 }upgrade_t;
 
 extern dev_ctx_t myDevice;
