@@ -21,7 +21,7 @@
 
 #define DEV_NUM						(12)
 
-#define VERSION						(0x0008)
+#define VERSION						(0x0801)//v8.1,基于地址响应，增加私有协议OTA,增加读保护
 
 #define BROADCAST_ADDR              (0xFF)
 #define CHECK_ADDR_INVALID(addr)    (BROADCAST_ADDR != addr && addr != myDevice.address)

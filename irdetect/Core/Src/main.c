@@ -68,9 +68,48 @@ void InterruptRemap(void)
 	__HAL_RCC_SYSCFG_CLK_ENABLE();
 	memcpy((void*)RAM_ADDRESS_START, (void*)APPLICATION_ADDRESS, VECTOR_SIZE);
 	__HAL_SYSCFG_REMAPMEMORY_SRAM();
+  __enable_irq();//如果bootloader关闭中断，这里必须打开中断，否则会导致中断无法响应
 }
 /* USER CODE END 0 */
 
+void Set_RDP_Level1(void)
+{
+    FLASH_OBProgramInitTypeDef obInit;
+
+    // 解锁 Flash 和 Option Bytes
+    HAL_FLASH_Unlock();
+    HAL_FLASH_OB_Unlock();
+
+    // 读取当前 Option Bytes 设置
+    HAL_FLASHEx_OBGetConfig(&obInit);
+
+    printf("at present RDP LEVEL = 0x%X\r\n", obInit.RDPLevel);
+
+    // 如果已经是 Level 1，就不用重复设置
+    if (obInit.RDPLevel != OB_RDP_LEVEL_1)
+    {
+        obInit.OptionType = OPTIONBYTE_RDP;
+        obInit.RDPLevel = OB_RDP_LEVEL_1;
+
+        if (HAL_FLASHEx_OBProgram(&obInit) != HAL_OK)
+        {
+            printf("set RDP Level 1 fail\r\n");
+        }
+        else
+        {
+            printf("set RDP Level 1 success, preparing to reset...\r\n");
+            HAL_FLASH_OB_Launch(); // MCU 会复位
+        }
+    }
+    else
+    {
+        printf("set RDP Level 1 success\r\n");
+    }
+
+    // 锁定 Flash
+    HAL_FLASH_OB_Lock();
+    HAL_FLASH_Lock();
+}
 /**
   * @brief  The application entry point.
   * @retval int
@@ -104,6 +143,8 @@ int main(void)
   MX_TIM14_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+
+  //Set_RDP_Level1(); // 设置RDP为1级，禁止读写Flash
   /* USER CODE BEGIN 2 */
 	printSetting();
 	user_start_tim();
