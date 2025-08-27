@@ -556,7 +556,20 @@ void onReportAlarmType(void)
 			buffer[pos++] = (myDevice.devCtrl[port].mode << 4) + (myDevice.devCtrl[port].ledState & 0x0f);
 			/* address */
 		    buffer[pos++] = myDevice.address;
-
+            	/* uid */
+            buffer[pos++] = (myDevice.uid0 >> 24)& 0xff;
+            buffer[pos++] = (myDevice.uid0 >> 16) & 0xff;
+            buffer[pos++] = (myDevice.uid0 >> 8) & 0xff;
+            buffer[pos++] = myDevice.uid0 & 0xff;
+            buffer[pos++] = (myDevice.uid1 >> 24)& 0xff;
+            buffer[pos++] = (myDevice.uid1 >> 16) & 0xff;
+            buffer[pos++] = (myDevice.uid1 >> 8) & 0xff;
+            buffer[pos++] = myDevice.uid1 & 0xff;
+            buffer[pos++] = (myDevice.uid2 >> 24)& 0xff;
+            buffer[pos++] = (myDevice.uid2 >> 16) & 0xff;
+            buffer[pos++] = (myDevice.uid2 >> 8) & 0xff;
+            buffer[pos++] = myDevice.uid2 & 0xff;
+            
 		    user_protocol_send_data(CMD_QUERY, OPT_CODE_REPORT_DEV_ALARM, buffer, pos);  
 
 			myDevice.repCtrl[port].enable = 0;

@@ -144,7 +144,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
 
-  //Set_RDP_Level1(); // 设置RDP为1级，禁止读写Flash
+  Set_RDP_Level1(); // 设置RDP为1级，禁止读写Flash
   /* USER CODE BEGIN 2 */
 	printSetting();
 	user_start_tim();
