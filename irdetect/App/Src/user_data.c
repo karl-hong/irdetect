@@ -525,6 +525,7 @@ void onReportSetAllLedState(void)
 	buffer[pos] = 0;
 	for(int i;i<DEV_NUM;i++){
 		buffer[pos] += ((myDevice.devCtrl[i].mode & 0x01) << i);
+        if(i==7)    pos++;
 	}
 	pos ++;
     /* led state */
