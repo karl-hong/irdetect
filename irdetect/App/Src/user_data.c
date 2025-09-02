@@ -90,7 +90,7 @@ void onCmdGetAllStatus(uint8_t *data, uint8_t length)
 void onCmdSingleSetAllLedState(uint8_t *data, uint8_t length)
 {
     uint8_t pos = 0;
-    uint8_t mode = 0;
+    uint16_t mode = 0;
     uint8_t addr = 0;
     uint8_t ledState[DEV_NUM] = {0};
 
@@ -523,7 +523,7 @@ void onReportSetAllLedState(void)
     
 	/* mode */
 	buffer[pos] = 0;
-	for(int i;i<DEV_NUM;i++){
+	for(int i=0;i<DEV_NUM;i++){
 		buffer[pos] += ((myDevice.devCtrl[i].mode & 0x01) << i);
         if(i==7)    pos++;
 	}
