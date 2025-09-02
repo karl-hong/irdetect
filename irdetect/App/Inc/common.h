@@ -21,7 +21,7 @@
 
 #define DEV_NUM						(12)
 
-#define VERSION						(0x0802)//v8.2
+#define VERSION						(0x0803)//v8.3
 
 #define BROADCAST_ADDR              (0xFF)
 #define CHECK_ADDR_INVALID(addr)    (BROADCAST_ADDR != addr && addr != myDevice.address)
